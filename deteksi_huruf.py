@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 def min_max_scaling(data):
     min = 0
@@ -130,7 +132,6 @@ def predict_single_sample_log(sample, means, variances, p, classes):
     if prob_sum > 0:
         class_probabilities = class_probabilities / prob_sum
     else:
-        # If all probabilities are 0, use uniform distribution
         class_probabilities = np.ones(total_classes) / total_classes
     
     return class_probabilities
@@ -160,17 +161,52 @@ def predict_multiple_sample(feature_test, means, variances, p, classes):
 # -----------------------------------------------------------
 
 # Calculate Accuracy 
-def manual_accuracy_score(y_true, y_pred):
+def manual_accuracy_score(true, predict):
     correct = 0
-    total = len(y_true)
+    total = len(true)
     
-    y_true = y_true.values
+    true = true.values
 
     for i in range(total):
-        if y_true[i] == y_pred[i]: 
+        if true[i] == predict[i]: 
             correct += 1
     
     return correct / total
+# -----------------------------------------------------------
+
+# Create confusion matrix
+def create_confusion_matrix(true, predict, classes):
+    true = true.values
+    n_classes = len(classes)
+    confusion_matrix = np.zeros((n_classes, n_classes), dtype=int)
+    
+    class_to_idx = {cls: idx for idx, cls in enumerate(classes)}
+    
+    for true_label, pred_label in zip(true, predict):
+        true_idx = class_to_idx[true_label]
+        pred_idx = class_to_idx[pred_label]
+        confusion_matrix[true_idx][pred_idx] += 1
+    
+    return confusion_matrix
+# -----------------------------------------------------------
+
+# Display confusion matrix
+def display_confusion_matrix(confusion_matrix, classes):
+    
+    df = pd.DataFrame(confusion_matrix, index=classes, columns=classes)
+    df.index.name = 'True Alphabet'
+    df.columns.name = 'Predicted Alphabet'
+    
+    plt.figure(figsize=(12, 10))
+    
+    sns.heatmap(df, annot=True, fmt='d', cmap='Blues', cbar=True,
+                square=True, linewidths=0.5)
+    plt.title('Confusion Matrix', fontsize=14, fontweight='bold')
+    plt.ylabel('True Alphabet', fontsize=12)
+    plt.xlabel('Predicted Alphabet', fontsize=12)
+    
+    plt.tight_layout()
+    plt.show()
 # -----------------------------------------------------------
 
 # Main to train model
@@ -198,6 +234,9 @@ def main_2():
     accuracy = manual_accuracy_score(label_test, predictions)
     print(f"Accuracy: {accuracy}")
     
+    confusion_matrix = create_confusion_matrix(label_test, predictions, classes)
+    display_confusion_matrix(confusion_matrix, classes)
+
     return accuracy, predictions, probabilities
 
 main_2()
