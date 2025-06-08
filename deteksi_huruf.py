@@ -7,9 +7,41 @@ def min_max_scaling(data):
 
     return (data-min) / (max - min)
 
+def save_model(means, variances, p, classes):
+    means_df = pd.DataFrame(means, index=classes)
+    means_df.to_csv('data/means.csv')
+    
+    variances_df = pd.DataFrame(variances, index=classes)
+    variances_df.to_csv('data/variances.csv')
+    
+    priors_df = pd.DataFrame({
+        'prior': p,
+        'class': classes
+    })
+    priors_df.to_csv('data/priors_class.csv', index=False)
+    
+
+def load_model():
+    means_df = pd.read_csv('data/means.csv', index_col=0)
+    variances_df = pd.read_csv('data/variances.csv', index_col=0)
+    priors_df = pd.read_csv('data/priors_class.csv')
+    
+    means = means_df.to_numpy()
+    variances = variances_df.to_numpy()
+    classes = priors_df['class'].tolist()
+    p = priors_df['prior'].to_numpy()
+    
+    return means, variances, p, classes
+
 # Read data
 def read_data():
     url = 'data/handwritten_data_785.csv'
+    df = pd.read_csv(url, header=None)
+
+    return df
+
+def read_data_test():
+    url = 'data/test.csv'
     df = pd.read_csv(url, header=None)
 
     return df
@@ -46,6 +78,8 @@ def model_train(label_train, feature_train):
 
     for x in range(len(p)):
         classes.append(chr(ord('A')+ x))
+
+    save_model(means, variances, p, classes)
 
     return means, variances, p, classes
 # -----------------------------------------------------------
@@ -139,8 +173,8 @@ def manual_accuracy_score(y_true, y_pred):
     return correct / total
 # -----------------------------------------------------------
 
-# Main process
-def main():
+# Main to train model
+def main_1():
     df = read_data()
 
     label_train, feature_train, label_test, feature_test = split_data(df)
@@ -149,8 +183,21 @@ def main():
     predictions, probabilities = predict_multiple_sample(feature_test, means, variances, p, classes)
 
     accuracy = manual_accuracy_score(label_test, predictions)
-    print(f"\nFinal Accuracy: {accuracy})")
+    print(f"Accuracy: {accuracy}")
     
     return accuracy, predictions, probabilities
 
-main()
+# Main to test model
+def main_2(): 
+    df = read_data_test()
+
+    label_train, feature_train, label_test, feature_test = split_data(df)
+    means, variances, p, classes = load_model()
+    predictions, probabilities = predict_multiple_sample(feature_test, means, variances, p, classes)
+
+    accuracy = manual_accuracy_score(label_test, predictions)
+    print(f"Accuracy: {accuracy}")
+    
+    return accuracy, predictions, probabilities
+
+main_2()
